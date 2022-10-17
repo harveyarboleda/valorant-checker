@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Valorant Checker</title>
+        <meta charset="UTF-8">
+        <meta name="description" content="Valorant Checker">
+        <meta name="keywords" content="Valorant Checker">
+        <meta name="author" content="Harvey Arboleda">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link href="https://fonts.googleapis.com/css?family=Muli:900&display=swap" rel="stylesheet">
+
+        <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+        <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="./valorant.css" rel="stylesheet"/>
+
+    </head>
+    <body>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="search">
+                    <div class="mb-3">
+                    <div class="row">
+                        <div class="col-8" style="position:relative;">
+                            <div class="tag">PLAYER</div>
+                            <input type="text" id="player" class="form-control">
+                        </div>
+                        <div class="col-4" style="position:relative;">
+                            <div class="tag">TAG</div>
+                            <input type="text" id="tag" class="form-control">
+                        </div>
+                    </div>
+                    </div>
+                    <div class="mb-3">
+                        <button class="search_btn">
+                            <p class="search_label">
+                                SEARCH
+                            </p>
+                        </button>
+                    </div>
+                </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="player">
+                        <div class="bg">
+                            <div class="bg2">
+                                <div class="row">
+                                    <div class="col-12" style="position:relative;text-align:center;padding-top: 14px;padding-bottom: 14px;">
+                                        WELCOME TO VALORANT PROFILE CHECKER
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- Outer container -->
+        <script>
+            var toastMixin = Swal.mixin({
+                toast: true,
+                icon: 'success',
+                title: 'General Title',
+                animation: false,
+                position: 'top-right',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            var player = "";
+            var tag = "";
+            var user_info1 = [];
+            var user_info2 = [];
+            var mmr_history = [];
+            var check = 0;
+            $('.search_btn').click(function() {
+                check = 0;
+                player = $('#player').val();
+                tag = $('#tag').val();
+
+                if(player.length == 0 || tag.length == 0) {
+                    alert("Error! Please input the fields!");
+                    return false;
+                }
+                var url1 = "https://api.henrikdev.xyz/valorant/v1/account/"+player+"/"+tag;
+                var url2 = "https://api.henrikdev.xyz/valorant/v1/mmr/ap/"+player+"/"+tag;
+                var url3 = "https://api.henrikdev.xyz/valorant/v1/mmr-history/ap/"+player+"/"+tag;
+                $.ajax(url1,{success: function(data) { user_info1 = data; check += 1; }});
+                $.ajax(url2,{success: function(data) { user_info2 = data; check += 1;}});
+                $.ajax(url3,{success: function(data) { mmr_history = data; check += 1; }});
+                console.log(check);
+                if(check == 3) {
+                    getUserInfo(user_info1, user_info2, mmr_history); 
+                    toastMixin.fire({
+                        animation: true,
+                        title: 'Successfully!'
+                    }); 
+                } else {
+                    toastMixin.fire({
+                        animation: true,
+                        title: 'Error! Please try again!',
+                        icon: 'error'
+                    });
+                }
+            });
+
+            function getUserInfo(array1, array2, array3) {
+                var x = `
+                    <div class="bg">
+                        <div class="bg2">
+                            <div class="row">
+                                <div class="col-12" style="position:relative;">
+                                    <img src="`+array1.data.card.small+`" class="avatar"/>
+                                    <span>
+                                        `+array1.data.name+`#`+array1.data.tag+`
+                                        <p style="font-size: 12px;">
+                                            <img src="`+array2.data.images.small+`">
+                                            `+array2.data.currenttierpatched+`
+                                        </p>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg">
+                        <div class="bg2">
+                            <div class="row">
+                                <div class="col-12" style="position:relative;text-align:center;padding-top: 14px;padding-bottom: 14px;">
+                                    MATCH HISTORY
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                Object.keys(array3.data).forEach(function(key) {
+                    console.log(key, array3.data[key]);
+                    x = x + `<div class="bg">
+                                <div class="bg2" style="background:`+(array3.data[key].mmr_change_to_last_game > 0 ? "#46ff65" : "#ff4655")+`!important;color:#fff;">
+                                    <div class="row">
+                                        <div class="col-12" style="position:relative;">
+                                            <div class="rank-info">
+                                                <img src="`+array3.data[key].images.small+`" style="height: 28px;"/>
+                                                <label>`+array3.data[key].mmr_change_to_last_game+`</label>
+                                            </div>
+                                            <div class="date">
+                                                `+array3.data[key].date+`
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                });
+                $('.player').html("");
+                $('.player').append(x);
+            }
+
+            
+        </script>
+    </body>
+</html>
